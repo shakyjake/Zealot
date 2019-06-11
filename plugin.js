@@ -4,6 +4,18 @@
 (function(){
 
 	function CK_HasText(element){
+		if(element.name === 'iframe'){/* Can be empty */
+			return true;
+		}
+		if(element.name === 'video'){/* Can be empty */
+			return true;
+		}
+		if(element.name === 'audio'){/* Can be empty */
+			return true;
+		}
+		if(element.name === 'img'){/* Can't be not empty */
+			return true;
+		}
 		var HasText, Children, i;
 		HasText = false;
 		if(typeof(element.value) === 'undefined'){
