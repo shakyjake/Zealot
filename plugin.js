@@ -1,7 +1,13 @@
 /*
-	20th March 2019 Jake Nicholson
+	Copyright (c) 26th November 2019 Jake Nicholson
 */
 (function(){
+	
+	function OneOf(NodeName, PickFrom){
+		return PickFrom.filter(function(Entry){
+			return Entry.toLowerCase() === NodeName.toLowerCase();
+		}).length > 0;
+	}
 
 	function CK_HasText(element){
 		if(element.name === 'iframe'){/* Can be empty */
@@ -40,148 +46,213 @@
 		return HasText;
 	}
 	
+	var FILTER_RULES = {
+		elements : {
+			a : function(element){
+				var Removed = false;
+				if(!!element.attributes.target){
+					if(!element.attributes.rel){
+						element.attributes.rel = 'noopener';
+					}
+				}
+				if(OneOf(element.parent.name, ['span', 'strong', 'em'])){
+					element.parent.replaceWithChildren();
+					Removed = true;
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			span : function(element){/* this needs to be more aggressive as Word is now wrapping everything in spans */
+				var Removed = false;
+				if(OneOf(element.parent.name, ['strong', 'em', 'span'])){
+					element.replaceWithChildren();
+					Removed = true;
+				}
+				if(!Removed){
+					if(!element.next && !element.previous){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+				
+			},
+			strong : function(element){
+				var Removed = false;
+				if(OneOf(element.parent.name, ['a', 'strong', 'em', 'span'])){
+					element.parent.replaceWithChildren();
+					Removed = true;
+				} else if(OneOf(element.parent.name, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])){
+					element.replaceWithChildren();
+					Removed = true;
+				}
+				if(!Removed){
+					if(!element.next && !element.previous){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			em : function(element){
+				var Removed = false;
+				if(OneOf(element.parent.name, ['a', 'strong', 'em', 'span'])){
+					element.parent.replaceWithChildren();
+					Removed = true;
+				} else if(OneOf(element.parent.name, ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'])){
+					element.replaceWithChildren();
+					Removed = true;
+				}
+				if(!Removed){
+					if(!element.next && !element.previous){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			p : function(element){
+				var Removed = false;
+				if(typeof(element.parent.name) !== 'undefined'){
+					if(element.parent.name.toLowerCase() === 'li'){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			h1 : function(element){
+				var Removed = false;
+				if(typeof(element.parent.name) !== 'undefined'){
+					if(element.parent.name.toLowerCase() === 'li'){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			h2 : function(element){
+				var Removed = false;
+				if(typeof(element.parent.name) !== 'undefined'){
+					if(element.parent.name.toLowerCase() === 'li'){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			h3 : function(element){
+				var Removed = false;
+				if(typeof(element.parent.name) !== 'undefined'){
+					if(element.parent.name.toLowerCase() === 'li'){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			h4 : function(element){
+				var Removed = false;
+				if(typeof(element.parent.name) !== 'undefined'){
+					if(element.parent.name.toLowerCase() === 'li'){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			h5 : function(element){
+				var Removed = false;
+				if(typeof(element.parent.name) !== 'undefined'){
+					if(element.parent.name.toLowerCase() === 'li'){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			h6 : function(element){
+				var Removed = false;
+				if(typeof(element.parent.name) !== 'undefined'){
+					if(element.parent.name.toLowerCase() === 'li'){
+						element.replaceWithChildren();
+						Removed = true;
+					}
+				}
+				if(!Removed){
+					if(!CK_HasText(element)){
+						return false;
+					}
+				}
+			},
+			table : function(element){
+				if(element.isEmpty){
+					return false;
+				}
+				if(element.children.length === 1){
+					if(element.children[0].name === 'thead'){
+						return false;
+					}
+				}
+				if(element.children.length === 2){
+					var TBody;
+					TBody = element.children[1];
+					if(!CK_HasText(TBody)){
+						return false;
+					}
+				}
+				if(!CK_HasText(element)){
+					return false;
+				}
+			}
+		}
+	};
+	
 	CKEDITOR.plugins.add('zealot', {
 		init : function(editor){
 			editor.on('instanceReady', function(event){
-				event.editor.dataProcessor.htmlFilter.addRules({
-					elements : {
-						a : function(element){
-							if(!!element.attributes.target){
-								if(!element.attributes.rel){
-									element.attributes['rel'] = 'noopener';
-								}
-							}
-							if(element.parent.name.toLowerCase() === 'strong' || element.parent.name.toLowerCase() === 'em'){
-								element.parent.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						span : function(element){
-							if(element.parent.name.toLowerCase() === 'span'){
-								element.parent.replaceWithChildren();
-							}
-							if(element.parent.name.toLowerCase() === 'strong' || element.parent.name.toLowerCase() === 'em'){
-								element.parent.replaceWithChildren();
-							}
-							
-							if(typeof(element.attributes.class) !== 'undefined'){
-								if(element.attributes.class === 'screen-reader-text'){
-									if(element.parent.name.toLowerCase() !== 'a'){
-										element.replaceWithChildren();
-									}
-								}
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-							
-						},
-						strong : function(element){
-							if(element.parent.name.toLowerCase() === 'a' || element.parent.name.toLowerCase() === 'em'){
-								element.parent.replaceWithChildren();
-							} else if(element.parent.name.toLowerCase() === 'span' || element.parent.name.toLowerCase() === 'h1' || element.parent.name.toLowerCase() === 'h2' || element.parent.name.toLowerCase() === 'h3' || element.parent.name.toLowerCase() === 'h4' || element.parent.name.toLowerCase() === 'h5' || element.parent.name.toLowerCase() === 'h6'){
-								element.replaceWithChildren();
-							}
-							if(!element.next && !element.previous){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						em : function(element){
-							if(element.parent.name.toLowerCase() === 'strong' || element.parent.name.toLowerCase() === 'a'){
-								element.parent.replaceWithChildren();
-							} else if(element.parent.name.toLowerCase() === 'span' || element.parent.name.toLowerCase() === 'h1' || element.parent.name.toLowerCase() === 'h2' || element.parent.name.toLowerCase() === 'h3' || element.parent.name.toLowerCase() === 'h4' || element.parent.name.toLowerCase() === 'h5' || element.parent.name.toLowerCase() === 'h6'){
-								element.replaceWithChildren();
-							}
-							if(!element.next && !element.previous){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						p : function(element){
-							if(element.parent.name.toLowerCase() === 'li'){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						h1 : function(element){
-							if(element.parent.name.toLowerCase() === 'li'){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						h2 : function(element){
-							if(element.parent.name.toLowerCase() === 'li'){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						h3 : function(element){
-							if(element.parent.name.toLowerCase() === 'li'){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						h4 : function(element){
-							if(element.parent.name.toLowerCase() === 'li'){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						h5 : function(element){
-							if(element.parent.name.toLowerCase() === 'li'){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						h6 : function(element){
-							if(element.parent.name.toLowerCase() === 'li'){
-								element.replaceWithChildren();
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						},
-						table : function(element){
-							if(element.isEmpty){
-								return false;
-							}
-							if(element.children.length === 1){
-								if(element.children[0].name === 'thead'){
-									return false;
-								}
-							}
-							if(element.children.length === 2){
-								var TBody;
-								TBody = element.children[1];
-								if(!CK_HasText(TBody)){
-									return false;
-								}
-							}
-							if(!CK_HasText(element)){
-								return false;
-							}
-						}
-					}
-				});
+				event.editor.dataProcessor.htmlFilter.addRules(FILTER_RULES);
+				event.editor.dataProcessor.dataFilter.addRules(FILTER_RULES);
 				event.editor.on('selectionChange', function(e){
 					var CmdBold, CmdItalic, CmdLink, CmdBQ, CmdListBullet, CmdListNumber;
 					CmdBold = this.getCommand('bold');
